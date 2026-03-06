@@ -1,0 +1,19 @@
+﻿{
+  "name": "DuoChart",
+  "short_name": "DuoChart",
+  "description": "Create synthetic trading pairs between any assets with clean candlestick charts.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/duochart-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

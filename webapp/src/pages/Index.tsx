@@ -102,7 +102,7 @@ export default function Index() {
               </div>
               <div>
                 <h1 className="font-outfit text-xl font-bold text-foreground">
-                  Chart Anything
+                  DuoChart
                 </h1>
                 <p className="text-xs text-muted-foreground">
                   Create synthetic pairs between any assets
@@ -263,7 +263,7 @@ export default function Index() {
       {/* Footer */}
       <footer className="border-t border-border mt-12 py-6">
         <div className="max-w-7xl mx-auto px-4 md:px-6 text-center text-xs text-muted-foreground">
-          <p>Chart Anything — Create synthetic pairs between any assets</p>
+          <p>DuoChart — Create synthetic pairs between any assets</p>
         </div>
       </footer>
     </div>
