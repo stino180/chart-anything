@@ -1,0 +1,213 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* DuoChart - Financial Terminal Theme */
+
+@layer base {
+  :root {
+    --background: 220 20% 4%;
+    --foreground: 210 20% 95%;
+
+    --card: 220 20% 6%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 220 20% 8%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 142 70% 45%;
+    --primary-foreground: 220 20% 4%;
+
+    --secondary: 220 20% 12%;
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 220 20% 10%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 38 95% 55%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 220 20% 14%;
+    --input: 220 20% 12%;
+    --ring: 142 70% 45%;
+
+    --radius: 0.5rem;
+
+    /* Chart specific colors */
+    --chart-green: 142 70% 45%;
+    --chart-red: 0 72% 51%;
+    --chart-grid: 220 20% 12%;
+    --chart-crosshair: 210 20% 60%;
+
+    --sidebar-background: 220 20% 5%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 220 20% 4%;
+    --sidebar-accent: 220 20% 10%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 220 20% 14%;
+    --sidebar-ring: 142 70% 45%;
+  }
+
+  .dark {
+    --background: 220 20% 4%;
+    --foreground: 210 20% 95%;
+
+    --card: 220 20% 6%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 220 20% 8%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 142 70% 45%;
+    --primary-foreground: 220 20% 4%;
+
+    --secondary: 220 20% 12%;
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 220 20% 10%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 38 95% 55%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 220 20% 14%;
+    --input: 220 20% 12%;
+    --ring: 142 70% 45%;
+
+    --sidebar-background: 220 20% 5%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 220 20% 4%;
+    --sidebar-accent: 220 20% 10%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 220 20% 14%;
+    --sidebar-ring: 142 70% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-outfit;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar for terminal feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
+
+@layer utilities {
+  .font-outfit {
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Terminal glow effects */
+  .glow-green {
+    box-shadow: 0 0 20px hsl(var(--chart-green) / 0.3),
+                0 0 40px hsl(var(--chart-green) / 0.1);
+  }
+
+  .glow-red {
+    box-shadow: 0 0 20px hsl(var(--chart-red) / 0.3),
+                0 0 40px hsl(var(--chart-red) / 0.1);
+  }
+
+  .text-glow-green {
+    text-shadow: 0 0 10px hsl(var(--chart-green) / 0.5);
+  }
+
+  .text-glow-red {
+    text-shadow: 0 0 10px hsl(var(--chart-red) / 0.5);
+  }
+
+  /* Grid pattern background */
+  .grid-pattern {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Scanline effect for retro terminal feel */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(var(--background) / 0.03) 2px,
+      hsl(var(--background) / 0.03) 4px
+    );
+    pointer-events: none;
+  }
+
+  /* Animate price ticker */
+  @keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .animate-ticker {
+    animation: ticker-scroll 30s linear infinite;
+  }
+
+  /* Pulse animation for live indicator */
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .animate-live-pulse {
+    animation: live-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* Fade in animation */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out forwards;
+  }
+}
