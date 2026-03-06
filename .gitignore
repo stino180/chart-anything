@@ -1,0 +1,7 @@
+# Environment files (may contain API keys)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
