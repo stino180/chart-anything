@@ -142,12 +142,23 @@ export default function Index() {
           <CompareMode />
         ) : (
           <div className="flex gap-6">
-            <PresetPairs
-              baseAsset={baseAsset}
-              quoteAsset={quoteAsset}
-              onSelectPair={handlePresetSelect}
-            />
+            <div className="hidden md:block">
+              <PresetPairs
+                baseAsset={baseAsset}
+                quoteAsset={quoteAsset}
+                onSelectPair={handlePresetSelect}
+              />
+            </div>
             <div className="flex-1 min-w-0 space-y-6">
+              {/* Mobile preset pairs - horizontal scroll */}
+              <div className="md:hidden">
+                <PresetPairs
+                  baseAsset={baseAsset}
+                  quoteAsset={quoteAsset}
+                  onSelectPair={handlePresetSelect}
+                  horizontal
+                />
+              </div>
               {/* Pair selector card */}
               <div className="bg-card border border-border rounded-xl p-4 md:p-6">
                 <div className="flex items-center gap-2 mb-4">

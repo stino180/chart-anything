@@ -23,9 +23,10 @@ interface PresetPairsProps {
   baseAsset: Asset | null;
   quoteAsset: Asset | null;
   onSelectPair: (base: Asset, quote: Asset) => void;
+  horizontal?: boolean;
 }
 
-export function PresetPairs({ baseAsset, quoteAsset, onSelectPair }: PresetPairsProps) {
+export function PresetPairs({ baseAsset, quoteAsset, onSelectPair, horizontal = false }: PresetPairsProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const handlePreset = (preset: PresetPair) => {
@@ -38,6 +39,28 @@ export function PresetPairs({ baseAsset, quoteAsset, onSelectPair }: PresetPairs
 
   const isActive = (preset: PresetPair) =>
     baseAsset?.symbol === preset.baseSymbol && quoteAsset?.symbol === preset.quoteSymbol;
+
+  if (horizontal) {
+    return (
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+        {PRESETS.map((preset) => (
+          <button
+            key={`${preset.baseSymbol}/${preset.quoteSymbol}`}
+            onClick={() => handlePreset(preset)}
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm whitespace-nowrap shrink-0 transition-colors',
+              isActive(preset)
+                ? 'bg-primary/15 border-primary/30 text-primary'
+                : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+            )}
+          >
+            <span>{preset.icon}</span>
+            <span className="font-mono text-xs">{preset.baseSymbol}/{preset.quoteSymbol}</span>
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden shrink-0 w-56">
