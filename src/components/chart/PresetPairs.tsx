@@ -23,9 +23,10 @@ interface PresetPairsProps {
   baseAsset: Asset | null;
   quoteAsset: Asset | null;
   onSelectPair: (base: Asset, quote: Asset) => void;
+  horizontal?: boolean;
 }
 
-export function PresetPairs({ baseAsset, quoteAsset, onSelectPair }: PresetPairsProps) {
+export function PresetPairs({ baseAsset, quoteAsset, onSelectPair, horizontal = false }: PresetPairsProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const handlePreset = (preset: PresetPair) => {
