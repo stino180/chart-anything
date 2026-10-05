@@ -9,255 +9,92 @@ export interface OHLCData {
   volume?: number;
 }
 
-const FMP_API_KEY = import.meta.env.VITE_FMP_API_KEY;
-const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
+// Where prices come from:
+// - Crypto: Hyperliquid's public info API, called straight from the browser
+// - Everything else: /api/candles (functions/api/candles.ts), which proxies
+//   Yahoo Finance since Yahoo doesn't allow browser requests
+// Both are bucketed to UTC days so cross-source pairs (e.g. BTC/AAPL) line up.
+const HYPERLIQUID_INFO_URL = 'https://api.hyperliquid.xyz/info';
+const DAY = 86400;
 
-// Map our symbols to FMP symbols
-function getFMPSymbol(symbol: string, type: string): string {
-  // Crypto symbols need USD suffix
-  if (type === 'crypto') {
-    return `${symbol}USD`;
+const HYPERLIQUID_CRYPTO = new Set([
+  'BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK', 'UNI',
+  'ATOM', 'LTC', 'HYPE', 'SUI', 'APT', 'ARB', 'OP', 'INJ',
+]);
+
+async function fetchHyperliquidCandles(symbol: string): Promise<OHLCData[]> {
+  const response = await fetch(HYPERLIQUID_INFO_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'candleSnapshot',
+      // Hyperliquid caps a response at 5000 candles, ~13 years of dailies
+      req: { coin: symbol, interval: '1d', startTime: Date.now() - 5 * 365 * DAY * 1000 },
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Hyperliquid returned ${response.status} for ${symbol}`);
   }
-  // Forex symbols need USD pair
-  if (type === 'forex' && symbol !== 'USD') {
-    return `${symbol}USD`;
+  const candles: Array<{ t: number; o: string; h: string; l: string; c: string; v: string }> = await response.json();
+  if (!Array.isArray(candles) || candles.length === 0) {
+    throw new Error(`No price data for ${symbol}`);
   }
-  // Commodities mapping
-  if (type === 'commodity') {
-    const commodityMap: Record<string, string> = {
-      'GOLD': 'GCUSD',
-      'SILVER': 'SIUSD',
-      'OIL': 'CLUSD',
-    };
-    return commodityMap[symbol] || symbol;
-  }
-  // Indices mapping
-  if (type === 'index') {
-    const indexMap: Record<string, string> = {
-      'SPX': '^GSPC',
-      'NDX': '^IXIC',
-      'DJI': '^DJI',
-    };
-    return indexMap[symbol] || symbol;
-  }
-  // Stocks use their symbol directly
-  return symbol;
+  return candles.map((c) => ({
+    time: Math.floor(c.t / 1000 / DAY) * DAY,
+    open: Number(c.o),
+    high: Number(c.h),
+    low: Number(c.l),
+    close: Number(c.c),
+    volume: Number(c.v),
+  }));
 }
 
-// Get asset type from symbol
-function getAssetType(symbol: string): string {
-  const cryptos = ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK', 'MATIC', 'UNI', 'ATOM', 'LTC', 'HYPE', 'SUI', 'APT', 'ARB', 'OP', 'INJ', 'FTM'];
-  const forex = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD'];
-  const commodities = ['GOLD', 'SILVER', 'OIL'];
-  const indices = ['SPX', 'NDX', 'DJI'];
-
-  if (cryptos.includes(symbol)) return 'crypto';
-  if (forex.includes(symbol)) return 'forex';
-  if (commodities.includes(symbol)) return 'commodity';
-  if (indices.includes(symbol)) return 'index';
-  return 'stock';
+async function fetchYahooCandles(symbol: string): Promise<OHLCData[]> {
+  const response = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}`);
+  const body = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(body)) {
+    throw new Error(body?.error ?? `Price request failed (${response.status}) for ${symbol}`);
+  }
+  if (body.length === 0) {
+    throw new Error(`No price data for ${symbol}`);
+  }
+  return body;
 }
 
-// Fetch historical data from FMP API
-async function fetchFMPData(symbol: string, days: number): Promise<OHLCData[]> {
-  const type = getAssetType(symbol);
-  const fmpSymbol = getFMPSymbol(symbol, type);
-
-  // Special case for USD - it's always 1
-  if (symbol === 'USD') {
-    return generateUSDData(days);
-  }
-
-  try {
-    // New stable API endpoint
-    const endpoint = `${FMP_BASE_URL}/historical-price-eod/full?symbol=${fmpSymbol}&apikey=${FMP_API_KEY}`;
-
-    console.log(`Fetching ${symbol} (${fmpSymbol}) from FMP API...`);
-    const response = await fetch(endpoint);
-
-    if (!response.ok) {
-      console.error(`FMP API error for ${symbol}: ${response.status}`);
-      return generateFallbackData(symbol, days);
-    }
-
-    const data = await response.json();
-
-    // New API returns array directly
-    if (!Array.isArray(data) || data.length === 0) {
-      console.warn(`No historical data for ${symbol}, using fallback`);
-      return generateFallbackData(symbol, days);
-    }
-
-    // Convert FMP data to our format
-    // FMP returns data in descending order (newest first), we need ascending
-    const historical = data.slice(0, days).reverse();
-
-    return historical.map((candle: { date: string; open: number; high: number; low: number; close: number; volume?: number }) => ({
-      time: new Date(candle.date).getTime() / 1000,
-      open: candle.open,
-      high: candle.high,
-      low: candle.low,
-      close: candle.close,
-      volume: candle.volume,
-    }));
-  } catch (error) {
-    console.error(`Error fetching ${symbol}:`, error);
-    return generateFallbackData(symbol, days);
-  }
-}
-
-// Generate USD data (always 1)
+// USD is the unit everything is priced in, so it's a flat 1 every day
 function generateUSDData(days: number): OHLCData[] {
+  const today = Math.floor(Date.now() / 1000 / DAY) * DAY;
   const data: OHLCData[] = [];
-  const now = Math.floor(Date.now() / 1000);
-  const dayInSeconds = 86400;
-
   for (let i = days; i >= 0; i--) {
-    const time = now - (i * dayInSeconds);
-    data.push({
-      time,
-      open: 1,
-      high: 1,
-      low: 1,
-      close: 1,
-      volume: 0,
-    });
+    data.push({ time: today - i * DAY, open: 1, high: 1, low: 1, close: 1, volume: 0 });
   }
-
   return data;
 }
 
-// Fallback data generator for when API fails
-function generateFallbackData(symbol: string, days: number): OHLCData[] {
-  const params = FALLBACK_PARAMS[symbol.toUpperCase()] || { price: 100, volatility: 0.05 };
-  return generateMockOHLC(params.price, params.volatility, days);
-}
-
-// Generate realistic mock OHLC data for an asset (fallback)
-function generateMockOHLC(
-  basePrice: number,
-  volatility: number,
-  days: number = 365
-): OHLCData[] {
-  const data: OHLCData[] = [];
-  const now = Math.floor(Date.now() / 1000);
-  const dayInSeconds = 86400;
-
-  let price = basePrice;
-
-  for (let i = days; i >= 0; i--) {
-    const time = now - (i * dayInSeconds);
-
-    // Random walk with some trend
-    const change = (Math.random() - 0.48) * volatility * price;
-    const open = price;
-    price = Math.max(price + change, basePrice * 0.1);
-    const close = price;
-
-    // Generate realistic high/low
-    const range = Math.abs(close - open) + (Math.random() * volatility * price * 0.5);
-    const high = Math.max(open, close) + range * Math.random();
-    const low = Math.min(open, close) - range * Math.random();
-
-    data.push({
-      time,
-      open,
-      high: Math.max(high, open, close),
-      low: Math.min(low, open, close),
-      close,
-      volume: Math.random() * 1000000000,
-    });
-  }
-
-  return data;
-}
-
-// Fallback prices and volatilities for different assets
-const FALLBACK_PARAMS: Record<string, { price: number; volatility: number }> = {
-  // Crypto
-  BTC: { price: 95000, volatility: 0.04 },
-  ETH: { price: 3200, volatility: 0.05 },
-  XRP: { price: 2.5, volatility: 0.06 },
-  SOL: { price: 180, volatility: 0.07 },
-  ADA: { price: 0.85, volatility: 0.06 },
-  DOGE: { price: 0.32, volatility: 0.08 },
-  AVAX: { price: 35, volatility: 0.07 },
-  DOT: { price: 7, volatility: 0.06 },
-  LINK: { price: 22, volatility: 0.06 },
-  MATIC: { price: 0.45, volatility: 0.07 },
-  UNI: { price: 12, volatility: 0.07 },
-  ATOM: { price: 9, volatility: 0.06 },
-  LTC: { price: 100, volatility: 0.05 },
-  HYPE: { price: 24, volatility: 0.09 },
-  SUI: { price: 4.5, volatility: 0.08 },
-  APT: { price: 9, volatility: 0.07 },
-  ARB: { price: 0.75, volatility: 0.08 },
-  OP: { price: 1.8, volatility: 0.08 },
-  INJ: { price: 22, volatility: 0.08 },
-  FTM: { price: 0.7, volatility: 0.09 },
-
-  // Stocks
-  AAPL: { price: 230, volatility: 0.02 },
-  MSFT: { price: 420, volatility: 0.02 },
-  GOOGL: { price: 190, volatility: 0.025 },
-  AMZN: { price: 220, volatility: 0.025 },
-  NVDA: { price: 140, volatility: 0.04 },
-  TSLA: { price: 410, volatility: 0.05 },
-  META: { price: 600, volatility: 0.03 },
-  AMD: { price: 120, volatility: 0.04 },
-  NFLX: { price: 900, volatility: 0.035 },
-  CRM: { price: 340, volatility: 0.03 },
-
-  // Forex (vs USD)
-  USD: { price: 1, volatility: 0 },
-  EUR: { price: 1.08, volatility: 0.005 },
-  GBP: { price: 1.27, volatility: 0.006 },
-  JPY: { price: 0.0065, volatility: 0.005 },
-  CHF: { price: 1.12, volatility: 0.004 },
-  CAD: { price: 0.71, volatility: 0.005 },
-  AUD: { price: 0.63, volatility: 0.006 },
-
-  // Commodities
-  GOLD: { price: 2650, volatility: 0.01 },
-  SILVER: { price: 31, volatility: 0.02 },
-  OIL: { price: 72, volatility: 0.03 },
-
-  // Indices
-  SPX: { price: 6000, volatility: 0.01 },
-  NDX: { price: 21000, volatility: 0.015 },
-  DJI: { price: 44000, volatility: 0.01 },
-};
-
-// Cache for fetched data
-const dataCache: Map<string, { data: OHLCData[]; timestamp: number }> = new Map();
+// Full history per symbol; timeframes slice it, so switching 1M -> 1Y is free
+const historyCache: Map<string, { data: OHLCData[]; timestamp: number }> = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export async function getAssetOHLCAsync(symbol: string, days: number = 365): Promise<OHLCData[]> {
-  const cacheKey = `${symbol}-${days}`;
-  const cached = dataCache.get(cacheKey);
-
-  // Return cached data if still valid
+async function getFullHistory(symbol: string): Promise<OHLCData[]> {
+  const cached = historyCache.get(symbol);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return cached.data;
   }
-
-  const data = await fetchFMPData(symbol, days);
-
-  dataCache.set(cacheKey, { data, timestamp: Date.now() });
+  const data = HYPERLIQUID_CRYPTO.has(symbol)
+    ? await fetchHyperliquidCandles(symbol)
+    : await fetchYahooCandles(symbol);
+  historyCache.set(symbol, { data, timestamp: Date.now() });
   return data;
 }
 
-// Synchronous version that returns cached data or fallback (for backwards compatibility)
-export function getAssetOHLC(symbol: string, days: number = 365): OHLCData[] {
-  const cacheKey = `${symbol}-${days}`;
-  const cached = dataCache.get(cacheKey);
-
-  if (cached) {
-    return cached.data;
+// Throws if prices can't be loaded; callers show an error instead of a chart
+export async function getAssetOHLCAsync(symbol: string, days: number = 365): Promise<OHLCData[]> {
+  if (symbol === 'USD') {
+    return generateUSDData(days);
   }
-
-  // Return fallback data immediately, async fetch will update cache
-  return generateFallbackData(symbol, days);
+  const history = await getFullHistory(symbol);
+  const cutoff = Math.floor(Date.now() / 1000) - days * DAY;
+  return history.filter((candle) => candle.time >= cutoff);
 }
 
 // Calculate synthetic pair OHLC from two assets

@@ -16,7 +16,7 @@ export const ASSETS: Asset[] = [
   { symbol: 'AVAX', name: 'Avalanche', type: 'crypto' },
   { symbol: 'DOT', name: 'Polkadot', type: 'crypto' },
   { symbol: 'LINK', name: 'Chainlink', type: 'crypto' },
-  { symbol: 'MATIC', name: 'Polygon', type: 'crypto' },
+  { symbol: 'POL', name: 'Polygon', type: 'crypto' },
   { symbol: 'UNI', name: 'Uniswap', type: 'crypto' },
   { symbol: 'ATOM', name: 'Cosmos', type: 'crypto' },
   { symbol: 'LTC', name: 'Litecoin', type: 'crypto' },
@@ -26,7 +26,7 @@ export const ASSETS: Asset[] = [
   { symbol: 'ARB', name: 'Arbitrum', type: 'crypto' },
   { symbol: 'OP', name: 'Optimism', type: 'crypto' },
   { symbol: 'INJ', name: 'Injective', type: 'crypto' },
-  { symbol: 'FTM', name: 'Fantom', type: 'crypto' },
+  { symbol: 'S', name: 'Sonic (ex-Fantom)', type: 'crypto' },
 
   // Stocks - Tech
   { symbol: 'AAPL', name: 'Apple', type: 'stock' },
@@ -50,7 +50,7 @@ export const ASSETS: Asset[] = [
   { symbol: 'SPOT', name: 'Spotify', type: 'stock' },
   { symbol: 'SNAP', name: 'Snap', type: 'stock' },
   { symbol: 'SHOP', name: 'Shopify', type: 'stock' },
-  { symbol: 'SQ', name: 'Block', type: 'stock' },
+  { symbol: 'XYZ', name: 'Block', type: 'stock' },
   { symbol: 'PYPL', name: 'PayPal', type: 'stock' },
   { symbol: 'PLTR', name: 'Palantir', type: 'stock' },
   { symbol: 'COIN', name: 'Coinbase', type: 'stock' },

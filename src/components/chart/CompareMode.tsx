@@ -18,14 +18,17 @@ export function CompareMode() {
   const [timeframe, setTimeframe] = useState<Timeframe>('1Y');
   const [series, setSeries] = useState<AssetSeries[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (assets.length < 2) {
       setSeries([]);
+      setLoadError(null);
       return;
     }
     let cancelled = false;
     setIsLoading(true);
+    setLoadError(null);
     const days = getTimeframeDays(timeframe);
     Promise.all(assets.map((a) => getAssetOHLCAsync(a.symbol, days)))
       .then((ohlcArrays) => {
@@ -69,7 +72,12 @@ export function CompareMode() {
         });
         setSeries(result);
       })
-      .catch(() => setSeries([]))
+      .catch((error) => {
+        if (cancelled) return;
+        console.error('Error fetching compare data:', error);
+        setSeries([]);
+        setLoadError("Couldn't load prices for one of these assets. Try again in a moment.");
+      })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
@@ -140,6 +148,8 @@ export function CompareMode() {
             <Loader2 className="h-6 w-6 animate-spin" />
             <span>Loading compare data...</span>
           </div>
+        ) : loadError ? (
+          <div className="py-16 text-center text-sm text-muted-foreground">{loadError}</div>
         ) : (
           <MultiAssetChart series={series} />
         )}

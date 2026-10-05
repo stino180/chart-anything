@@ -14,7 +14,7 @@ const TIMEFRAMES: { value: Timeframe; label: string; days: number }[] = [
   { value: '1M', label: '1M', days: 30 },
   { value: '3M', label: '3M', days: 90 },
   { value: '1Y', label: '1Y', days: 365 },
-  { value: 'ALL', label: 'ALL', days: 365 },
+  { value: 'ALL', label: 'ALL', days: 5 * 365 }, // full history fetched by chartData
 ];
 
 export function getTimeframeDays(timeframe: Timeframe): number {

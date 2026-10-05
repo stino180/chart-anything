@@ -12,10 +12,14 @@ Synthetic-pair candlestick charts: pick any two assets (BTC/XRP, AAPL/GOLD, ...)
 - Build from the repo root: `npm run build` → `dist/` (Pages project `duochart`; it used to build an old `webapp/` copy, which is why Lovable edits weren't going live)
 - After Lovable changes: run `npm install --package-lock-only` and commit `package-lock.json`, or `npm ci` fails on the out-of-sync lockfile
 
-## Data
-- Prices from Financial Modeling Prep (`src/lib/chartData.ts`), key in `VITE_FMP_API_KEY`
-- On fetch failure it silently falls back to generated mock OHLC data — a "working" chart is not proof the API works
-- `VITE_*` vars are baked into the client bundle, so the FMP key is public; don't put secrets in `VITE_*`
+## Data (no API keys needed)
+- `src/lib/chartData.ts` picks the source per symbol:
+  - Crypto in `HYPERLIQUID_CRYPTO` → Hyperliquid `candleSnapshot` (api.hyperliquid.xyz/info), called from the browser
+  - Everything else → `/api/candles?symbol=X` → `functions/api/candles.ts`, a Cloudflare Pages Function proxying Yahoo Finance (no CORS on Yahoo). Non-ticker symbols (forex, GOLD, SPX, POL...) need an entry in its `YAHOO_SYMBOLS` map
+- Both sources bucket candles to UTC midnight; synthetic pairs join on exact `time`, so a mismatch silently empties cross-source pairs
+- On failure the UI shows an error. Never reintroduce mock/fallback prices — the site shipped fake charts for months that way (FMP with no key)
+- `/api/*` only exists on Cloudflare (or `npx wrangler pages dev dist`); under `vite` dev and Lovable's preview, non-crypto assets show the load error
+- Don't put secrets in `VITE_*` vars — they're baked into the public bundle
 - `src/integrations/supabase/` is Lovable-generated and currently unused
 
 ## Static assets

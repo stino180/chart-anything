@@ -25,6 +25,7 @@ export default function Index() {
   const [quoteAsset, setQuoteAsset] = useState<Asset | null>(getAssetBySymbol('XRP') ?? null);
   const [timeframe, setTimeframe] = useState<Timeframe>('1Y');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<CandlestickData<Time>[]>([]);
   const [priceInfo, setPriceInfo] = useState<{
     price: number;
@@ -49,16 +50,21 @@ export default function Index() {
 
   // Fetch data when assets or timeframe change
   useEffect(() => {
+    // Ignore responses from a pair the user has already switched away from
+    let cancelled = false;
+
     async function fetchData() {
       if (!baseAsset || !quoteAsset) {
         setChartData([]);
         setPriceInfo(null);
         setBaseOHLC(null);
         setQuoteOHLC(null);
+        setLoadError(null);
         return;
       }
 
       setIsLoading(true);
+      setLoadError(null);
 
       try {
         const days = getTimeframeDays(timeframe);
@@ -67,23 +73,33 @@ export default function Index() {
           getAssetOHLCAsync(baseAsset.symbol, days),
           getAssetOHLCAsync(quoteAsset.symbol, days),
         ]);
+        if (cancelled) return;
 
         const syntheticOHLC = calculateSyntheticPair(baseData, quoteData);
         const newChartData = toChartData(syntheticOHLC);
         const newPriceInfo = getPriceInfo(syntheticOHLC);
 
         setChartData(newChartData);
-        setPriceInfo(newPriceInfo);
+        setPriceInfo(syntheticOHLC.length > 0 ? newPriceInfo : null);
         setBaseOHLC(baseData);
         setQuoteOHLC(quoteData);
       } catch (error) {
+        if (cancelled) return;
         console.error('Error fetching data:', error);
+        setChartData([]);
+        setPriceInfo(null);
+        setBaseOHLC(null);
+        setQuoteOHLC(null);
+        setLoadError(`Couldn't load prices for ${baseAsset.symbol}/${quoteAsset.symbol}. Try again in a moment.`);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [baseAsset, quoteAsset, timeframe]);
 
   const pairName = baseAsset && quoteAsset
@@ -212,6 +228,11 @@ export default function Index() {
                         </div>
                       </div>
                     )}
+                    {!isLoading && loadError ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-card/80 z-10 px-6 text-center">
+                        <span className="text-sm text-muted-foreground">{loadError}</span>
+                      </div>
+                    ) : null}
                     <CandlestickChart data={chartData} />
                   </div>
 
