@@ -1,48 +1,23 @@
-# Vibecode Workspace
+# DuoChart (chart-anything) — Developer Notes
 
-This workspace contains a mobile app and backend server.
+Synthetic-pair candlestick charts: pick any two assets (BTC/XRP, AAPL/GOLD, ...) and chart one priced in the other.
 
-<projects>
-  webapp/    — React app (port 8000, environment variable VITE_BASE_URL)
-  backend/   — Hono API server (port 3000, environment variable VITE_BACKEND_URL)
-</projects>
+## Stack
+- React 18 + Vite + TypeScript, Tailwind + shadcn/ui (`src/components/ui`)
+- Charts: `lightweight-charts` (`src/components/chart/`)
+- Built with Lovable — Lovable may push commits directly to `main`
 
-<agents>
-  Use subagents for project-specific work:
-  - backend-developer: Changes to the backend API
-  - webapp-developer: Changes to the webapp frontend
+## Deploy
+- Cloudflare Pages, auto-deploys from `main` — pushing to `main` ships to production
+- Build: `npm run build` → `dist/`
+- After Lovable changes: run `npm install --package-lock-only` and commit `package-lock.json`, or `npm ci` fails on the out-of-sync lockfile
 
-  Each agent reads its project's CLAUDE.md for detailed instructions.
-</agents>
+## Data
+- Prices from Financial Modeling Prep (`src/lib/chartData.ts`), key in `VITE_FMP_API_KEY`
+- On fetch failure it silently falls back to generated mock OHLC data — a "working" chart is not proof the API works
+- `VITE_*` vars are baked into the client bundle, so the FMP key is public; don't put secrets in `VITE_*`
+- `src/integrations/supabase/` is Lovable-generated and currently unused
 
-<coordination>
-  When a feature needs both frontend and backend:
-  1. Define Zod schemas for request/response in backend/src/types.ts (shared contracts)
-  2. Implement backend route using the schemas
-  3. Test backend with cURL (use $BACKEND_URL, never localhost)
-  4. Implement frontend, importing schemas from backend/src/types.ts to parse responses
-  5. Test the integration
-
-  <shared_types>
-    All API contracts live in backend/src/types.ts as Zod schemas.
-    Both backend and frontend can import from this file — single source of truth.
-  </shared_types>
-</coordination>
-
-<skills>
-  Shared skills in .claude/skills/:
-  - database-auth: Set up Prisma + Better Auth for user accounts and data persistence
-  - ai-apis-like-chatgpt: Use this skill when the user asks you to make an app that requires an AI API.
-
-  Frontend only skills:
-  - frontend-app-design: Create distinctive, production-grade web interfaces using React, Tailwind, and shadcn/ui. Use when building pages, components, or styling any web UI.
-</skills>
-
-<environment>
-  System manages git and dev servers. DO NOT manage these.
-  The user views the app through Vibecode Mobile App with a webview preview or Vibecode Web App with an iframe preview.
-  The user cannot see code or terminal. Do everything for them.
-  Write one-off scripts to achieve tasks the user asks for.
-  Communicate in an easy to understand manner for non-technical users.
-  Be concise and don't talk too much.
-</environment>
+## Static assets
+- `public/` holds favicon, OG image, app icon, and `manifest.webmanifest`
+- No service worker on purpose: the old cache-first one served stale `index.html` after deploys (blank screen). If adding one, use network-first for navigations.
