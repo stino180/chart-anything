@@ -10,7 +10,8 @@ Synthetic-pair candlestick charts: pick any two assets (BTC/XRP, AAPL/GOLD, ...)
 ## Deploy
 - Cloudflare Pages, auto-deploys from `main` — pushing to `main` ships to production
 - Build from the repo root: `npm run build` → `dist/` (Pages project `duochart`; it used to build an old `webapp/` copy, which is why Lovable edits weren't going live)
-- After Lovable changes: run `npm install --package-lock-only` and commit `package-lock.json`, or `npm ci` fails on the out-of-sync lockfile
+- Cloudflare installs with **bun** (`bun install --frozen-lockfile`, bun 1.2.x) because `bun.lock` exists — `bun.lock` is the lockfile that matters. After adding/changing deps run `npx -y bun@1.2.15 install` and commit `bun.lock`, or the build fails with "lockfile had changes, but lockfile is frozen". `package-lock.json` is only for local npm use
+- Use Windows git (not WSL git) in this checkout: it was cloned with CRLF conversion, so WSL git shows every file as modified
 
 ## Data (no API keys needed)
 - `src/lib/chartData.ts` picks the source per symbol:
