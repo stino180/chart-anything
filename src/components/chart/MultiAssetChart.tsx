@@ -35,7 +35,7 @@ export function MultiAssetChart({ series, height = 400 }: MultiAssetChartProps) 
 
     const chart = createChart(containerRef.current, {
       width: containerRef.current.clientWidth,
-      height,
+      height: containerRef.current.clientHeight,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: 'hsl(220, 10%, 50%)',
@@ -90,15 +90,15 @@ export function MultiAssetChart({ series, height = 400 }: MultiAssetChartProps) 
 
     chart.timeScale().fitContent();
 
-    const handleResize = () => {
+    const resizeObserver = new ResizeObserver(() => {
       if (containerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: containerRef.current.clientWidth });
+        chartRef.current.applyOptions({ width: containerRef.current.clientWidth, height: containerRef.current.clientHeight });
       }
-    };
-    window.addEventListener('resize', handleResize);
+    });
+    resizeObserver.observe(containerRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
       seriesRefs.current = [];
@@ -120,7 +120,7 @@ export function MultiAssetChart({ series, height = 400 }: MultiAssetChartProps) 
 
   if (series.length === 0) {
     return (
-      <div className="flex items-center justify-center rounded-lg bg-secondary/30 border border-border" style={{ height }}>
+      <div className="flex items-center justify-center h-[280px] sm:h-[360px] md:h-[450px] rounded-lg bg-secondary/30 border border-border">
         <p className="text-sm text-muted-foreground">Add 2–4 assets to compare</p>
       </div>
     );
@@ -141,8 +141,7 @@ export function MultiAssetChart({ series, height = 400 }: MultiAssetChartProps) 
       </div>
       <div
         ref={containerRef}
-        className="w-full rounded-lg overflow-hidden"
-        style={{ height }}
+        className="w-full h-[280px] sm:h-[360px] md:h-[450px] rounded-lg overflow-hidden"
       />
     </div>
   );

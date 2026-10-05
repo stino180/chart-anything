@@ -95,8 +95,8 @@ export default function Index() {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Activity className="h-6 w-6 text-primary" />
               </div>
@@ -104,18 +104,18 @@ export default function Index() {
                 <h1 className="font-outfit text-xl font-bold text-foreground">
                   Chart Anything
                 </h1>
-                <p className="text-xs text-muted-foreground">
+                <p className="hidden sm:block text-xs text-muted-foreground">
                   Create synthetic pairs between any assets
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex rounded-lg border border-border p-0.5 bg-secondary/50">
+              <div className="flex w-full sm:w-auto rounded-lg border border-border p-0.5 bg-secondary/50">
                 <button
                   type="button"
                   onClick={() => setViewMode('ratio')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'ratio' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex flex-1 sm:flex-none justify-center items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'ratio' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   <BarChart3 className="h-4 w-4" />
                   Ratio
@@ -123,7 +123,7 @@ export default function Index() {
                 <button
                   type="button"
                   onClick={() => setViewMode('compare')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'compare' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex flex-1 sm:flex-none justify-center items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'compare' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   <LineChart className="h-4 w-4" />
                   Compare
@@ -137,21 +137,21 @@ export default function Index() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6">
         {viewMode === 'compare' ? (
           <CompareMode />
         ) : (
           <div className="flex gap-6">
-            <div className="hidden md:block">
+            <div className="hidden xl:block">
               <PresetPairs
                 baseAsset={baseAsset}
                 quoteAsset={quoteAsset}
                 onSelectPair={handlePresetSelect}
               />
             </div>
-            <div className="flex-1 min-w-0 space-y-6">
+            <div className="flex-1 min-w-0 space-y-4 md:space-y-6">
               {/* Mobile preset pairs - horizontal scroll */}
-              <div className="md:hidden">
+              <div className="xl:hidden">
                 <PresetPairs
                   baseAsset={baseAsset}
                   quoteAsset={quoteAsset}
@@ -212,12 +212,12 @@ export default function Index() {
                         </div>
                       </div>
                     )}
-                    <CandlestickChart data={chartData} height={450} />
+                    <CandlestickChart data={chartData} />
                   </div>
 
                   {/* Chart footer */}
-                  <div className="px-4 md:px-6 pb-4 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
+                  <div className="px-4 md:px-6 pb-4 flex flex-wrap items-center justify-between gap-1 text-xs text-muted-foreground">
+                    <span className="min-w-0 break-words">
                       Synthetic pair: 1 {baseAsset.symbol} = {priceInfo?.price.toFixed(6) ?? '...'} {quoteAsset.symbol}
                     </span>
                     <span className="font-mono">

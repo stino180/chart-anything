@@ -33,13 +33,13 @@ export function PriceDisplay({
   const isPositive = change >= 0;
 
   return (
-    <div className="flex flex-wrap items-start gap-6 md:gap-10">
+    <div className="flex flex-wrap items-start gap-x-5 gap-y-3 md:gap-10 min-w-0">
       {/* Main price */}
-      <div>
+      <div className="min-w-0">
         <div className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">
           {baseSymbol}/{quoteSymbol}
         </div>
-        <div className="font-mono text-3xl md:text-4xl font-bold text-foreground">
+        <div className="font-mono text-2xl sm:text-3xl md:text-4xl font-bold text-foreground break-all">
           {formatPrice(price)}
         </div>
       </div>

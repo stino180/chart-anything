@@ -63,7 +63,7 @@ export function AssetSearch({
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative min-w-0">
       <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
         {label}
       </label>
@@ -74,9 +74,9 @@ export function AssetSearch({
             setIsOpen(true);
             setTimeout(() => inputRef.current?.focus(), 0);
           }}
-          className="w-full flex items-center gap-3 px-4 py-3 bg-secondary border border-border rounded-lg hover:border-primary/50 transition-colors text-left"
+          className="w-full min-w-0 flex items-center gap-3 px-4 py-3 bg-secondary border border-border rounded-lg hover:border-primary/50 transition-colors text-left"
         >
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 truncate">
             <span className="font-mono text-lg font-semibold text-foreground">
               {value.symbol}
             </span>
