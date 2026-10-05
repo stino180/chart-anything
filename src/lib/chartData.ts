@@ -17,6 +17,14 @@ export interface OHLCData {
 const HYPERLIQUID_INFO_URL = 'https://api.hyperliquid.xyz/info';
 const DAY = 86400;
 
+// Inside the Capacitor mobile app the page isn't served by Cloudflare, so a
+// relative /api path has nothing behind it; call the production site instead.
+// Capacitor injects window.Capacitor into its webview, no import needed.
+const isNativeApp = Boolean(
+  (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.(),
+);
+const API_BASE_URL = isNativeApp ? 'https://duochart.pages.dev' : '';
+
 const HYPERLIQUID_CRYPTO = new Set([
   'BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK', 'UNI',
   'ATOM', 'LTC', 'HYPE', 'SUI', 'APT', 'ARB', 'OP', 'INJ',
@@ -50,7 +58,7 @@ async function fetchHyperliquidCandles(symbol: string): Promise<OHLCData[]> {
 }
 
 async function fetchYahooCandles(symbol: string): Promise<OHLCData[]> {
-  const response = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}`);
+  const response = await fetch(`${API_BASE_URL}/api/candles?symbol=${encodeURIComponent(symbol)}`);
   const body = await response.json().catch(() => null);
   if (!response.ok || !Array.isArray(body)) {
     throw new Error(body?.error ?? `Price request failed (${response.status}) for ${symbol}`);

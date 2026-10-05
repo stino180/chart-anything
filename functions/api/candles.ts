@@ -48,10 +48,27 @@ function json(body: unknown, status: number, maxAge: number): Response {
   });
 }
 
-export async function onRequestGet(context: {
+// The Capacitor mobile app's webview runs on these origins, not duochart.pages.dev.
+// Only these get CORS access, so other sites can't hotlink this endpoint.
+const APP_ORIGINS = new Set(['capacitor://localhost', 'https://localhost', 'http://localhost']);
+
+interface Context {
   request: Request;
   waitUntil: (promise: Promise<unknown>) => void;
-}): Promise<Response> {
+}
+
+export async function onRequestGet(context: Context): Promise<Response> {
+  const response = await getCandles(context);
+  const origin = context.request.headers.get('origin');
+  if (!origin || !APP_ORIGINS.has(origin)) return response;
+  // Added after the edge cache so a cached entry never carries one app's origin
+  const withCors = new Response(response.body, response);
+  withCors.headers.set('access-control-allow-origin', origin);
+  withCors.headers.set('vary', 'Origin');
+  return withCors;
+}
+
+async function getCandles(context: Context): Promise<Response> {
   const { request, waitUntil } = context;
   const symbol = (new URL(request.url).searchParams.get('symbol') ?? '').toUpperCase();
   const yahooSymbol = YAHOO_SYMBOLS[symbol] ?? (STOCK_TICKER.test(symbol) ? symbol : null);

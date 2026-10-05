@@ -19,6 +19,7 @@ Synthetic-pair candlestick charts: pick any two assets (BTC/XRP, AAPL/GOLD, ...)
 - Both sources bucket candles to UTC midnight; synthetic pairs join on exact `time`, so a mismatch silently empties cross-source pairs
 - On failure the UI shows an error. Never reintroduce mock/fallback prices — the site shipped fake charts for months that way (FMP with no key)
 - `/api/*` only exists on Cloudflare (or `npx wrangler pages dev dist`); under `vite` dev and Lovable's preview, non-crypto assets show the load error
+- Mobile app (Capacitor): the webview has no `/api`, so `chartData.ts` calls `https://duochart.pages.dev/api/...` when `window.Capacitor` is native, and the function allows CORS only from Capacitor origins (`APP_ORIGINS`). Keep both in sync if the domain changes
 - Don't put secrets in `VITE_*` vars — they're baked into the public bundle
 - `src/integrations/supabase/` is Lovable-generated and currently unused
 
