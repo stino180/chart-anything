@@ -9,7 +9,7 @@ Synthetic-pair candlestick charts: pick any two assets (BTC/XRP, AAPL/GOLD, ...)
 
 ## Deploy
 - Cloudflare Pages, auto-deploys from `main` — pushing to `main` ships to production
-- Build: `npm run build` → `dist/`
+- Build from the repo root: `npm run build` → `dist/` (Pages project `duochart`; it used to build an old `webapp/` copy, which is why Lovable edits weren't going live)
 - After Lovable changes: run `npm install --package-lock-only` and commit `package-lock.json`, or `npm ci` fails on the out-of-sync lockfile
 
 ## Data
@@ -20,4 +20,4 @@ Synthetic-pair candlestick charts: pick any two assets (BTC/XRP, AAPL/GOLD, ...)
 
 ## Static assets
 - `public/` holds favicon, OG image, app icon, and `manifest.webmanifest`
-- No service worker on purpose: the old cache-first one served stale `index.html` after deploys (blank screen). If adding one, use network-first for navigations.
+- `public/sw.js` is a kill switch that unregisters the old cache-first service worker (it served stale `index.html` after deploys → blank screen). Not registered by the app. If adding a real one, use network-first for navigations.
