@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { type Asset, getAssetBySymbol } from '@/data/assets';
+import { usePairFromUrl } from '@/hooks/usePairFromUrl';
 import { PairSelector } from '@/components/chart/PairSelector';
 import { CandlestickChart } from '@/components/chart/CandlestickChart';
 import { PriceDisplay } from '@/components/chart/PriceDisplay';
-import { TimeframeSelector, getTimeframeDays, type Timeframe } from '@/components/chart/TimeframeSelector';
+import { TimeframeSelector, getTimeframeDays } from '@/components/chart/TimeframeSelector';
 import { PresetPairs } from '@/components/chart/PresetPairs';
 import { CorrelationWidget } from '@/components/chart/CorrelationWidget';
 import { CompareMode } from '@/components/chart/CompareMode';
+import { ShareButton } from '@/components/chart/ShareButton';
+import { TradeOnHyperliquid } from '@/components/chart/TradeOnHyperliquid';
 import {
   getAssetOHLCAsync,
   calculateSyntheticPair,
@@ -21,9 +23,7 @@ type ViewMode = 'ratio' | 'compare';
 
 export default function Index() {
   const [viewMode, setViewMode] = useState<ViewMode>('ratio');
-  const [baseAsset, setBaseAsset] = useState<Asset | null>(getAssetBySymbol('BTC') ?? null);
-  const [quoteAsset, setQuoteAsset] = useState<Asset | null>(getAssetBySymbol('XRP') ?? null);
-  const [timeframe, setTimeframe] = useState<Timeframe>('1Y');
+  const { baseAsset, quoteAsset, timeframe, setPair, setTimeframe } = usePairFromUrl();
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<CandlestickData<Time>[]>([]);
@@ -37,16 +37,7 @@ export default function Index() {
   const [baseOHLC, setBaseOHLC] = useState<OHLCData[] | null>(null);
   const [quoteOHLC, setQuoteOHLC] = useState<OHLCData[] | null>(null);
 
-  const handleSwap = () => {
-    const temp = baseAsset;
-    setBaseAsset(quoteAsset);
-    setQuoteAsset(temp);
-  };
-
-  const handlePresetSelect = (base: Asset, quote: Asset) => {
-    setBaseAsset(base);
-    setQuoteAsset(quote);
-  };
+  const handleSwap = () => setPair(quoteAsset, baseAsset);
 
   // Fetch data when assets or timeframe change
   useEffect(() => {
@@ -162,7 +153,7 @@ export default function Index() {
               <PresetPairs
                 baseAsset={baseAsset}
                 quoteAsset={quoteAsset}
-                onSelectPair={handlePresetSelect}
+                onSelectPair={setPair}
               />
             </div>
             <div className="flex-1 min-w-0 space-y-4 md:space-y-6">
@@ -171,7 +162,7 @@ export default function Index() {
                 <PresetPairs
                   baseAsset={baseAsset}
                   quoteAsset={quoteAsset}
-                  onSelectPair={handlePresetSelect}
+                  onSelectPair={setPair}
                   horizontal
                 />
               </div>
@@ -186,8 +177,8 @@ export default function Index() {
                 <PairSelector
                   baseAsset={baseAsset}
                   quoteAsset={quoteAsset}
-                  onBaseChange={setBaseAsset}
-                  onQuoteChange={setQuoteAsset}
+                  onBaseChange={(asset) => setPair(asset, quoteAsset)}
+                  onQuoteChange={(asset) => setPair(baseAsset, asset)}
                   onSwap={handleSwap}
                 />
               </div>
@@ -234,6 +225,11 @@ export default function Index() {
                       </div>
                     ) : null}
                     <CandlestickChart data={chartData} />
+                  </div>
+
+                  <div className="px-4 md:px-6 pb-3 flex flex-wrap items-center gap-2">
+                    <ShareButton title={`${pairName} ratio chart`} />
+                    <TradeOnHyperliquid />
                   </div>
 
                   {/* Chart footer */}

@@ -1,4 +1,5 @@
 import type { CandlestickData, Time } from 'lightweight-charts';
+import { DAY, HYPERLIQUID_CRYPTO, fetchHyperliquidCandles, usdCandles } from './priceSources';
 
 export interface OHLCData {
   time: number; // Unix timestamp in seconds
@@ -9,13 +10,11 @@ export interface OHLCData {
   volume?: number;
 }
 
-// Where prices come from:
+// Where prices come from (rules live in priceSources.ts, shared with functions/):
 // - Crypto: Hyperliquid's public info API, called straight from the browser
 // - Everything else: /api/candles (functions/api/candles.ts), which proxies
 //   Yahoo Finance since Yahoo doesn't allow browser requests
 // Both are bucketed to UTC days so cross-source pairs (e.g. BTC/AAPL) line up.
-const HYPERLIQUID_INFO_URL = 'https://api.hyperliquid.xyz/info';
-const DAY = 86400;
 
 // Inside the Capacitor mobile app the page isn't served by Cloudflare, so a
 // relative /api path has nothing behind it; call the production site instead.
@@ -25,39 +24,7 @@ const isNativeApp = Boolean(
 );
 const API_BASE_URL = isNativeApp ? 'https://duochart.pages.dev' : '';
 
-const HYPERLIQUID_CRYPTO = new Set([
-  'BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'AVAX', 'DOT', 'LINK', 'UNI',
-  'ATOM', 'LTC', 'HYPE', 'SUI', 'APT', 'ARB', 'OP', 'INJ',
-]);
-
-async function fetchHyperliquidCandles(symbol: string): Promise<OHLCData[]> {
-  const response = await fetch(HYPERLIQUID_INFO_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      type: 'candleSnapshot',
-      // Hyperliquid caps a response at 5000 candles, ~13 years of dailies
-      req: { coin: symbol, interval: '1d', startTime: Date.now() - 5 * 365 * DAY * 1000 },
-    }),
-  });
-  if (!response.ok) {
-    throw new Error(`Hyperliquid returned ${response.status} for ${symbol}`);
-  }
-  const candles: Array<{ t: number; o: string; h: string; l: string; c: string; v: string }> = await response.json();
-  if (!Array.isArray(candles) || candles.length === 0) {
-    throw new Error(`No price data for ${symbol}`);
-  }
-  return candles.map((c) => ({
-    time: Math.floor(c.t / 1000 / DAY) * DAY,
-    open: Number(c.o),
-    high: Number(c.h),
-    low: Number(c.l),
-    close: Number(c.c),
-    volume: Number(c.v),
-  }));
-}
-
-async function fetchYahooCandles(symbol: string): Promise<OHLCData[]> {
+async function fetchViaCandlesApi(symbol: string): Promise<OHLCData[]> {
   const response = await fetch(`${API_BASE_URL}/api/candles?symbol=${encodeURIComponent(symbol)}`);
   const body = await response.json().catch(() => null);
   if (!response.ok || !Array.isArray(body)) {
@@ -67,16 +34,6 @@ async function fetchYahooCandles(symbol: string): Promise<OHLCData[]> {
     throw new Error(`No price data for ${symbol}`);
   }
   return body;
-}
-
-// USD is the unit everything is priced in, so it's a flat 1 every day
-function generateUSDData(days: number): OHLCData[] {
-  const today = Math.floor(Date.now() / 1000 / DAY) * DAY;
-  const data: OHLCData[] = [];
-  for (let i = days; i >= 0; i--) {
-    data.push({ time: today - i * DAY, open: 1, high: 1, low: 1, close: 1, volume: 0 });
-  }
-  return data;
 }
 
 // Full history per symbol; timeframes slice it, so switching 1M -> 1Y is free
@@ -90,7 +47,7 @@ async function getFullHistory(symbol: string): Promise<OHLCData[]> {
   }
   const data = HYPERLIQUID_CRYPTO.has(symbol)
     ? await fetchHyperliquidCandles(symbol)
-    : await fetchYahooCandles(symbol);
+    : await fetchViaCandlesApi(symbol);
   historyCache.set(symbol, { data, timestamp: Date.now() });
   return data;
 }
@@ -98,7 +55,7 @@ async function getFullHistory(symbol: string): Promise<OHLCData[]> {
 // Throws if prices can't be loaded; callers show an error instead of a chart
 export async function getAssetOHLCAsync(symbol: string, days: number = 365): Promise<OHLCData[]> {
   if (symbol === 'USD') {
-    return generateUSDData(days);
+    return usdCandles(days);
   }
   const history = await getFullHistory(symbol);
   const cutoff = Math.floor(Date.now() / 1000) - days * DAY;

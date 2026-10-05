@@ -17,6 +17,10 @@ const TIMEFRAMES: { value: Timeframe; label: string; days: number }[] = [
   { value: 'ALL', label: 'ALL', days: 5 * 365 }, // full history fetched by chartData
 ];
 
+export function isTimeframe(value: string | null): value is Timeframe {
+  return TIMEFRAMES.some(t => t.value === value);
+}
+
 export function getTimeframeDays(timeframe: Timeframe): number {
   const tf = TIMEFRAMES.find(t => t.value === timeframe);
   return tf?.days ?? 365;
