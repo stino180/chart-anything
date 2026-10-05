@@ -102,8 +102,12 @@ async function renderCard(base: string, quote: string): Promise<Response> {
     height: HEIGHT,
     fonts: [{ name: 'Outfit', data: font, weight: 700, style: 'normal' }],
   });
-  // Re-wrap so our cache header wins over the library's default
-  return new Response(image.body, {
+  // Render fully here: the library renders lazily inside the body stream, so a
+  // failure would otherwise surface as an empty 200 (and get edge-cached)
+  const png = await image.arrayBuffer();
+  if (png.byteLength === 0) throw new Error('Rendered an empty image');
+  // Our cache header wins over the library's default
+  return new Response(png, {
     headers: { 'content-type': 'image/png', 'cache-control': `public, max-age=${CACHE_SECONDS}` },
   });
 }
@@ -128,6 +132,8 @@ export async function onRequestGet({ request, waitUntil }: Context): Promise<Res
     return response;
   } catch (error) {
     console.error('OG render failed', base.symbol, quote.symbol, error);
-    return fallback;
+    const failed = new Response(null, fallback);
+    failed.headers.set('x-og-error', String((error as Error)?.message ?? error).slice(0, 200));
+    return failed;
   }
 }
