@@ -27,7 +27,7 @@ export function CandlestickChart({ data, height = 500 }: CandlestickChartProps) 
 
     const chart = createChart(containerRef.current, {
       width: containerRef.current.clientWidth,
-      height,
+      height: containerRef.current.clientHeight,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: 'hsl(220, 10%, 50%)',
@@ -90,19 +90,19 @@ export function CandlestickChart({ data, height = 500 }: CandlestickChartProps) 
     chartRef.current = chart;
     seriesRef.current = series;
 
-    // Handle resize
-    const handleResize = () => {
+    // Keep the chart fitted to the responsive container.
+    const resizeObserver = new ResizeObserver(() => {
       if (containerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
           width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
         });
       }
-    };
-
-    window.addEventListener('resize', handleResize);
+    });
+    resizeObserver.observe(containerRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
@@ -124,8 +124,7 @@ export function CandlestickChart({ data, height = 500 }: CandlestickChartProps) 
   return (
     <div
       ref={containerRef}
-      className="w-full rounded-lg overflow-hidden"
-      style={{ height }}
+      className="w-full h-[280px] sm:h-[360px] md:h-[450px] rounded-lg overflow-hidden"
     />
   );
 }

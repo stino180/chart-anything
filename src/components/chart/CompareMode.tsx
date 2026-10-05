@@ -91,10 +91,10 @@ export function CompareMode() {
     <div className="space-y-6">
       <div className="bg-card border border-border rounded-xl p-4 md:p-6">
         <h3 className="text-sm font-medium text-foreground mb-3">Compare assets (% growth from start)</h3>
-        <div className="flex flex-wrap items-end gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {assets.map((asset, i) => (
-            <div key={`${asset.symbol}-${i}`} className="flex items-end gap-2">
-              <div className="w-48">
+            <div key={`${asset.symbol}-${i}`} className="flex min-w-0 items-end gap-2">
+              <div className="min-w-0 flex-1">
                 <AssetSearch
                   value={asset}
                   onChange={(a) => setAssets((prev) => prev.map((p, j) => (j === i ? a : p)))}
@@ -115,7 +115,7 @@ export function CompareMode() {
             </div>
           ))}
           {assets.length < 4 && (
-            <div className="w-48">
+            <div className="min-w-0">
               <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
                 Add asset
               </label>
@@ -141,7 +141,7 @@ export function CompareMode() {
             <span>Loading compare data...</span>
           </div>
         ) : (
-          <MultiAssetChart series={series} height={450} />
+          <MultiAssetChart series={series} />
         )}
       </div>
     </div>
