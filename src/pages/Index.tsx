@@ -97,6 +97,11 @@ export default function Index() {
     ? `${baseAsset.symbol}/${quoteAsset.symbol}`
     : 'Select a Pair';
 
+  // functions/[pair].ts sets the title for the first load; keep it in sync as the pair changes
+  useEffect(() => {
+    document.title = `${pairName} chart | DuoChart`;
+  }, [pairName]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
