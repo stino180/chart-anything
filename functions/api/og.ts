@@ -81,12 +81,12 @@ async function renderCard(base: string, quote: string): Promise<Response> {
     <div style="display:flex;flex-direction:column;width:${WIDTH}px;height:${HEIGHT}px;padding:56px 60px 40px;background:#0b0d10;color:#f5f5f5;font-family:Outfit;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="display:flex;flex-direction:column;">
-          <div style="font-size:72px;font-weight:700;letter-spacing:-1px;">${base} / ${quote}</div>
-          <div style="font-size:30px;color:#9ca3af;margin-top:4px;">1 ${base} = ${formatRatio(last)} ${quote}</div>
+          <div style="display:flex;font-size:72px;font-weight:700;letter-spacing:-1px;">${base} / ${quote}</div>
+          <div style="display:flex;font-size:30px;color:#9ca3af;margin-top:4px;">1 ${base} = ${formatRatio(last)} ${quote}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;">
-          <div style="font-size:52px;font-weight:700;color:${color};">${up ? '+' : ''}${changePct.toFixed(1)}%</div>
-          <div style="font-size:26px;color:#9ca3af;">past year</div>
+          <div style="display:flex;font-size:52px;font-weight:700;color:${color};">${up ? '+' : ''}${changePct.toFixed(1)}%</div>
+          <div style="display:flex;font-size:26px;color:#9ca3af;">past year</div>
         </div>
       </div>
       <img src="${chartSvg(ratios, color)}" width="${CHART_WIDTH}" height="${CHART_HEIGHT}" style="margin-top:auto;" />
@@ -97,7 +97,9 @@ async function renderCard(base: string, quote: string): Promise<Response> {
     </div>`;
 
   const font = await loadGoogleFont({ family: 'Outfit', weight: 700 });
-  const image = new ImageResponse(html, {
+  // Satori requires display:flex on any div with several children, and the HTML
+  // parser turns whitespace between tags into extra text children
+  const image = new ImageResponse(html.replace(/>\s+</g, '><').trim(), {
     width: WIDTH,
     height: HEIGHT,
     fonts: [{ name: 'Outfit', data: font, weight: 700, style: 'normal' }],
